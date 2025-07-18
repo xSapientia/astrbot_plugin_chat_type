@@ -33,7 +33,7 @@ class ChatTypeDetector(Star):
                 "private_prompt": "[私聊环境] 切换为私聊模式"
             }
 
-    @filter.before_bot_reply()
+    @filter.on_llm_request()
     async def add_chat_type_prompt(self, event: AstrMessageEvent, context: Context) -> MessageEventResult:
         """
         在Bot回复前拦截并添加聊天类型提示
