@@ -13,48 +13,79 @@ from astrbot.api import logger, AstrBotConfig
 class ChatTypeDetector(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        
-        logger.info("chat type v0.0.1 加载成功！")
+        self.config = self._load_config(context)
+        logger.info("Chat Type Detector v0.1.0 加载成功！")
 
-    @filter.command_group([""])  # Matches all messages
-    async def on_message(self, event: AstrMessageEvent, context: Context):
+    def _load_config(self, context: Context) -> dict:
+        """加载配置文件"""
+        try:
+            config = context.get_config()
+            return {
+                "enable_plugin": config.get("enable_plugin", True),
+                "group_prompt": config.get("group_prompt", "[群聊环境] 切换为群聊模式"),
+                "private_prompt": config.get("private_prompt", "[私聊环境] 切换为私聊模式")
+            }
+        except Exception as e:
+            logger.error(f"加载配置失败: {e}")
+            return {
+                "enable_plugin": True,
+                "group_prompt": "[群聊环境] 切换为群聊模式",
+                "private_prompt": "[私聊环境] 切换为私聊模式"
+            }
+
+    @filter.before_bot_reply()
+    async def add_chat_type_prompt(self, event: AstrMessageEvent, context: Context) -> MessageEventResult:
         """
-        Intercepts all messages to add chat type context
+        在Bot回复前拦截并添加聊天类型提示
         """
-        # Check if this is a group chat by checking if group_id exists
-        is_private_result = event.is_private_chat()
+        # 检查插件是否启用
+        if not self.config.get("enable_plugin", True):
+            return MessageEventResult().continue_()
 
-        # Determine chat type
-        if is_private_result:
-            chat_type = "private"
-            chat_prompt = "[当前对话识别为[私聊]场景]"
-        else:
-            chat_type = "group"
-            chat_prompt = "[当前对话识别为[群聊]场景]"
+        try:
+            # 检测聊天类型
+            is_private = event.is_private_chat()
 
-        # 获取BOT的消息
-        original_message = event.get_messages()
+            # 选择对应的提示词
+            if is_private:
+                chat_type = "private"
+                chat_prompt = self.config.get("private_prompt")
+            else:
+                chat_type = "group"
+                chat_prompt = self.config.get("group_prompt")
 
-        # 在BOT消息前插入对应提示词
-        modified_message = f"{chat_prompt}\n{original_message}"
+            # 存储聊天类型信息供其他插件使用
+            context.set_property("chat_type", chat_type)
+            context.set_property("chat_prompt", chat_prompt)
 
-        # 储存聊天类型文本，兼容其他插件调用
-        context.set_property("chat_type", chat_type)
-        context.set_property("chat_prompt", chat_prompt)
+            # 记录日志
+            logger.debug(f"检测到{chat_type}聊天，用户: {event.get_sender_id()}")
 
-        # 输出识别日志 (optional)
-        logger.info(f"{chat_type} ->消息 {original_message[:50]}...")
+            # 获取并修改Bot的回复内容
+            bot_reply = event.get_result_str()
+            if bot_reply:
+                # 在Bot回复前添加提示词
+                modified_reply = f"{chat_prompt}\n{bot_reply}"
+                event.set_result(modified_reply)
+                logger.debug(f"已添加聊天类型提示: {chat_prompt}")
 
-        # Continue processing
-        return True
+        except Exception as e:
+            logger.error(f"处理消息时出错: {e}")
 
-def export_star() -> Star:
+        return MessageEventResult().continue_()
+
+    @filter.on_activated()
+    async def on_activated(self):
+        """插件激活时调用"""
+        logger.info("Chat Type Detector 插件已激活")
+
+    @filter.on_deactivated()
+    async def on_deactivated(self):
+        """插件停用时调用"""
+        logger.info("Chat Type Detector 插件已停用")
+
+def export_star() -> type[Star]:
     """
-    Export function required by AstrBot plugin system
+    导出Star类供AstrBot加载
     """
     return ChatTypeDetector
-
-# Alternative implementation using middleware pattern
-
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
