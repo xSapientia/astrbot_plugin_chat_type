@@ -8,13 +8,13 @@
   "group_prompt": {
     "description": "群聊提示词",
     "type": "text",
-    "default": "[群聊环境] 请使用适合公开场合的语言",
-    "hint": ""
+    "default": "[群聊环境] 切换为群聊模式",
+    "hint": "在群聊中，Bot回复前会添加此提示"
   },
   "private_prompt": {
     "description": "私聊提示词",
     "type": "text",
-    "default": "[私聊环境] 可以进行更深入的个人对话",
-    "hint": ""
+    "default": "[私聊环境] 切换为私聊模式",
+    "hint": "在私聊中，Bot回复前会添加此提示"
   }
 }
