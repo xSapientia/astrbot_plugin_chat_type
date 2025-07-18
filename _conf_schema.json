@@ -3,16 +3,18 @@
     "description": "插件总开关",
     "type": "bool",
     "default": true,
-    "hint": "关闭后，此插件所有功能都将失效。"
+    "hint": "关闭后，此插件所有功能都将失效"
   },
   "group_prompt": {
     "description": "群聊提示词",
-    "type": "string",
+    "type": "text",
     "default": "[群聊环境] 请使用适合公开场合的语言",
+    "hint": ""
   },
   "private_prompt": {
     "description": "私聊提示词",
-    "type": "string",
+    "type": "text",
     "default": "[私聊环境] 可以进行更深入的个人对话",
+    "hint": ""
   }
 }
