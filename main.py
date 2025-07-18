@@ -11,9 +11,8 @@ from astrbot.api import logger, AstrBotConfig
 )
 
 class ChatTypeDetector(Star):
-    def __init__(self, context: Context) -> None:
+    def __init__(self, context: Context):
         super().__init__(context)
-        self.context = context
         
         logger.info("chat type v0.0.1 加载成功！")
 
