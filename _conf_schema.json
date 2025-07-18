@@ -1,0 +1,7 @@
+{
+    "enable_logging": true,
+    "group_prompt": "[群聊环境] 请使用适合公开场合的语言",
+    "private_prompt": "[私聊环境] 可以进行更深入的个人对话",
+    "prompt_position": "prefix",
+    }
+}
