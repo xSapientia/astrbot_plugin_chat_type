@@ -1,9 +1,4 @@
-from typing import Dict, Any
-from dataclasses import dataclass
-from astrbot.api.star import Star, Context
-from astrbot.api.provider import Provider
-from astrbot.api.star.star_metadata import StarMetadata
-from astrbot.api.event import filter, AstrMessageEvent
+from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger, AstrBotConfig
 
