@@ -1,7 +1,18 @@
 {
-    "enable_logging": true,
-    "group_prompt": "[群聊环境] 请使用适合公开场合的语言",
-    "private_prompt": "[私聊环境] 可以进行更深入的个人对话",
-    "prompt_position": "prefix",
-    }
+  "enable_plugin": {
+    "description": "插件总开关",
+    "type": "bool",
+    "default": true,
+    "hint": "关闭后，此插件所有功能都将失效。"
+  },
+  "group_prompt": {
+    "description": "群聊提示词",
+    "type": "string",
+    "default": "[群聊环境] 请使用适合公开场合的语言",
+  },
+  "private_prompt": {
+    "description": "私聊提示词",
+    "type": "string",
+    "default": "[私聊环境] 可以进行更深入的个人对话",
+  }
 }
