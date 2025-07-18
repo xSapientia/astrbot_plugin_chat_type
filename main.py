@@ -56,34 +56,5 @@ def export_star() -> Star:
 
 # Alternative implementation using middleware pattern
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-    
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    
-    @filter.llm_tool()
-    async def detect_chat_type(context: Context, message: AstrBotMessage):
-        """
-        在LLM请求前检测聊天类型并插入相应提示
-        """
-        # 获取group_id来判断是否为群聊
-        # 根据AstrBot文档，如果是私聊，group_id为None或空
-        group_id = event.get_group_id()
-        if not group_id:
-            return
-
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
