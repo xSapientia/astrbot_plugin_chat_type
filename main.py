@@ -5,7 +5,7 @@ from astrbot.api import logger, AstrBotConfig
 @register(
     "astrbot_plugin_chat_type",
     "xSapientia",
-    "。",
+    "帮助区分私聊和群聊的插件",
     "0.0.1",
     "https://github.com/xSapientia/chattype",
 )
