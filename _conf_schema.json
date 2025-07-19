@@ -8,23 +8,20 @@
   "group_prompt": {
     "description": "群聊提示词",
     "type": "text",
-    "default": "[群聊环境] 请注意这是群聊，回复应当考虑公开性和适当性",
-    "hint": "在群聊中，此提示会添加到系统提示词中",
-    "editor_mode": true,
-    "editor_language": "text"
+    "default": "[群聊环境] 切换为群聊模式",
+    "hint": "在群聊中，此提示会插入到接收的消息中"
   },
   "private_prompt": {
     "description": "私聊提示词",
     "type": "text",
-    "default": "[私聊环境] 这是私聊对话，可以进行更个性化的交流",
-    "hint": "在私聊中，此提示会添加到系统提示词中",
-    "editor_mode": true,
-    "editor_language": "text"
+    "default": "[私聊环境] 切换为私聊模式",
+    "hint": "在私聊中，此提示会插入到接收的消息中"
   },
-  "add_to_system_prompt": {
-    "description": "是否自动添加到系统提示词",
-    "type": "bool",
-    "default": true,
-    "hint": "启用后，聊天类型提示会自动添加到LLM的系统提示词中"
+  "prompt_position": {
+    "description": "提示词插入位置",
+    "type": "string",
+    "default": "prefix",
+    "hint": "设置提示词插入的位置：prefix(前缀)或suffix(后缀)",
+    "options": ["prefix", "suffix"]
   }
 }
