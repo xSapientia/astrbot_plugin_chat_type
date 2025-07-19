@@ -74,16 +74,6 @@ class ChatTypeDetector(Star):
 
         return MessageEventResult().continue_()
 
-    @filter.on_activated()
-    async def on_activated(self):
-        """插件激活时调用"""
-        logger.info("Chat Type Detector 插件已激活")
-
-    @filter.on_deactivated()
-    async def on_deactivated(self):
-        """插件停用时调用"""
-        logger.info("Chat Type Detector 插件已停用")
-
 def export_star() -> type[Star]:
     """
     导出Star类供AstrBot加载
