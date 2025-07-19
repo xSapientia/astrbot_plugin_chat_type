@@ -10,12 +10,16 @@
     "type": "text",
     "default": "[群聊环境] 请注意这是群聊，回复应当考虑公开性和适当性",
     "hint": "在群聊中，此提示会添加到系统提示词中",
+    "editor_mode": true,
+    "editor_language": "text"
   },
   "private_prompt": {
     "description": "私聊提示词",
     "type": "text",
     "default": "[私聊环境] 这是私聊对话，可以进行更个性化的交流",
     "hint": "在私聊中，此提示会添加到系统提示词中",
+    "editor_mode": true,
+    "editor_language": "text"
   },
   "add_to_system_prompt": {
     "description": "是否自动添加到系统提示词",
