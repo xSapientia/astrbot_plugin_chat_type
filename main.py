@@ -6,7 +6,7 @@ from astrbot.api import logger, AstrBotConfig
     "astrbot_plugin_chat_type",
     "xSapientia",
     "帮助区分私聊和群聊的插件",
-    "0.0.2",
+    "0.0.3",
     "https://github.com/xSapientia/astrbot_plugin_chat_type",
 )
 class ChatTypeDetector(Star):
@@ -18,107 +18,117 @@ class ChatTypeDetector(Star):
         if not self.config:
             self.config = {
                 "enable_plugin": True,
-                "group_prompt": "[群聊环境] 请注意这是群聊，回复应当考虑公开性和适当性",
-                "private_prompt": "[私聊环境] 这是私聊对话，可以进行更个性化的交流",
-                "add_to_system_prompt": True
+                "group_prompt": "[群聊环境] 切换为群聊模式",
+                "private_prompt": "[私聊环境] 切换为私聊模式",
+                "prompt_position": "prefix"  # prefix 或 suffix
             }
-        logger.info("Chat Type Detector v0.0.2 加载成功！")
+        logger.info("Chat Type Detector v0.0.3 加载成功！")
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message_received(self, event: AstrMessageEvent):
         """
-        在接收到任何消息时检测聊天类型
+        在接收到任何消息时检测聊天类型并修改消息内容
         """
         # 检查插件是否启用
         if not self.config.get("enable_plugin", True):
             return
 
         try:
-            # 检测聊天类型
-            group_id = event.get_group_id()
-            is_group_chat = group_id is not None
+            # 使用 is_private_chat() 检测聊天类型
+            is_private = event.is_private_chat()
 
             # 选择对应的提示词
-            if is_group_chat:
-                chat_type = "group"
-                chat_prompt = self.config.get("group_prompt")
-                logger.debug(f"检测到群聊消息，群组ID: {group_id}, 发送者: {event.get_sender_id()}")
-            else:
+            if is_private:
                 chat_type = "private"
                 chat_prompt = self.config.get("private_prompt")
                 logger.debug(f"检测到私聊消息，发送者: {event.get_sender_id()}")
+            else:
+                chat_type = "group"
+                chat_prompt = self.config.get("group_prompt")
+                group_id = event.get_group_id()
+                logger.debug(f"检测到群聊消息，群组ID: {group_id}, 发送者: {event.get_sender_id()}")
 
-            # 将聊天类型信息存储到事件的额外信息中
+            # 获取原始消息
+            original_message = event.message_str
+
+            # 根据配置的位置插入提示词
+            prompt_position = self.config.get("prompt_position", "prefix")
+
+            if prompt_position == "prefix":
+                # 在消息前面添加提示词
+                modified_message = f"{chat_prompt}\n{original_message}"
+            elif prompt_position == "suffix":
+                # 在消息后面添加提示词
+                modified_message = f"{original_message}\n{chat_prompt}"
+            else:
+                # 默认前缀
+                modified_message = f"{chat_prompt}\n{original_message}"
+
+            # 修改事件中的消息内容
+            event.message_obj.message_str = modified_message
+
+            # 如果消息链中有纯文本消息，也需要修改
+            if event.message_obj.message:
+                from astrbot.api.message_components import Plain
+                for i, component in enumerate(event.message_obj.message):
+                    if isinstance(component, Plain):
+                        if prompt_position == "prefix" and i == 0:
+                            # 修改第一个文本组件
+                            component.text = f"{chat_prompt}\n{component.text}"
+                        elif prompt_position == "suffix" and i == len(event.message_obj.message) - 1:
+                            # 修改最后一个文本组件
+                            component.text = f"{component.text}\n{chat_prompt}"
+                        break
+
+            # 存储聊天类型信息到事件的额外信息中
             event.set_extra("chat_type", chat_type)
             event.set_extra("chat_prompt", chat_prompt)
-            event.set_extra("is_group_chat", is_group_chat)
-            event.set_extra("group_id", group_id if group_id else "")
+            event.set_extra("is_private_chat", is_private)
 
-            # 如果配置中启用了系统提示词修改
-            if self.config.get("add_to_system_prompt", True):
-                # 为后续的LLM请求准备提示词
-                event.set_extra("system_prompt_addon", chat_prompt)
-
-            logger.info(f"已识别{chat_type}聊天环境，消息: {event.message_str[:30]}...")
+            logger.info(f"已为{chat_type}聊天添加环境提示: {chat_prompt}")
 
         except Exception as e:
-            logger.error(f"检测聊天类型时出错: {e}")
-
-    @filter.on_llm_request()
-    async def modify_system_prompt(self, event: AstrMessageEvent, req):
-        """
-        在LLM请求时，如果之前已经检测到聊天类型，则添加到系统提示词
-        """
-        # 检查是否有之前存储的系统提示词附加内容
-        system_prompt_addon = event.get_extra("system_prompt_addon")
-        if system_prompt_addon and self.config.get("add_to_system_prompt", True):
-            if req.system_prompt:
-                req.system_prompt = f"{system_prompt_addon}\n\n{req.system_prompt}"
-            else:
-                req.system_prompt = system_prompt_addon
-            logger.debug("已将聊天类型提示添加到系统提示词")
+            logger.error(f"处理消息时出错: {e}")
 
     @filter.command("chattype")
     async def check_chat_type(self, event: AstrMessageEvent):
         """查看当前聊天类型"""
-        # 尝试从事件的额外信息中获取已存储的聊天类型
-        stored_chat_type = event.get_extra("chat_type")
+        is_private = event.is_private_chat()
 
-        if stored_chat_type:
-            # 使用已存储的信息
-            if stored_chat_type == "group":
-                group_id = event.get_extra("group_id")
-                yield event.plain_result(
-                    f"当前是群聊环境\n"
-                    f"群组ID: {group_id}\n"
-                    f"当前提示词: {event.get_extra('chat_prompt')}"
-                )
-            else:
-                yield event.plain_result(
-                    f"当前是私聊环境\n"
-                    f"用户ID: {event.get_sender_id()}\n"
-                    f"当前提示词: {event.get_extra('chat_prompt')}"
-                )
+        if is_private:
+            yield event.plain_result(
+                f"当前是私聊环境\n"
+                f"用户ID: {event.get_sender_id()}\n"
+                f"当前提示词: {self.config.get('private_prompt')}\n"
+                f"提示词位置: {self.config.get('prompt_position', 'prefix')}"
+            )
         else:
-            # 实时检测
             group_id = event.get_group_id()
-            if group_id:
-                yield event.plain_result(f"当前是群聊环境\n群组ID: {group_id}")
-            else:
-                yield event.plain_result(f"当前是私聊环境\n用户ID: {event.get_sender_id()}")
+            yield event.plain_result(
+                f"当前是群聊环境\n"
+                f"群组ID: {group_id}\n"
+                f"当前提示词: {self.config.get('group_prompt')}\n"
+                f"提示词位置: {self.config.get('prompt_position', 'prefix')}"
+            )
 
-    @filter.command("chattype_reload")
-    async def reload_config(self, event: AstrMessageEvent):
-        """重新加载配置"""
-        try:
-            # 尝试重新加载配置
-            if hasattr(self, 'config') and hasattr(self.config, 'load_config'):
-                self.config.load_config()
-                yield event.plain_result("配置已重新加载")
-            else:
-                yield event.plain_result("配置重载功能暂不可用")
-        except Exception as e:
-            yield event.plain_result(f"重载配置失败: {str(e)}")
+    @filter.command("chattype_test")
+    async def test_modification(self, event: AstrMessageEvent, text: str = "测试消息"):
+        """测试消息修改效果"""
+        is_private = event.is_private_chat()
+        chat_type = "私聊" if is_private else "群聊"
+        prompt = self.config.get("private_prompt" if is_private else "group_prompt")
+        position = self.config.get("prompt_position", "prefix")
+
+        if position == "prefix":
+            result = f"{prompt}\n{text}"
+        else:
+            result = f"{text}\n{prompt}"
+
+        yield event.plain_result(
+            f"原始消息: {text}\n"
+            f"聊天类型: {chat_type}\n"
+            f"修改后效果:\n---\n{result}\n---"
+        )
 
     async def terminate(self):
         """插件卸载时调用"""
